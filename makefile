@@ -1,8 +1,12 @@
 
 
 all_source_and_header_files:=src/rsl.cpp include/rsl.h include/rsl_mpi_send.h
+all_library_files:=lib/librsl.a
 
 all: use
+
+$(all_library_files): $(all_source_and_header_files)
+	make lib
 
 .PHONY:lib
 lib: $(all_source_and_header_files)
@@ -15,7 +19,7 @@ clean:
 	-rm -f obj/*
 
 .PHONY: test
-test:
+test: $(all_library_files)
 	@echo && $(MAKE) -C test/01-simple-compile
 	@echo && $(MAKE) -C test/02-check-mpirun
 	@echo && $(MAKE) -C test/03-mpi-init
@@ -32,5 +36,5 @@ testclean:
 
 
 .PHONY: use
-use:
+use: $(all_library_files)
 	@echo && $(MAKE) -C use
