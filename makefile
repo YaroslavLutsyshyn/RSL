@@ -2,6 +2,8 @@
 
 all_source_and_header_files:=src/rsl.cpp include/rsl.h include/rsl_mpi_send.h
 
+all: use
+
 .PHONY:lib
 lib: $(all_source_and_header_files)
 	mpic++ -std=c++11 -I include src/rsl.cpp -c -o obj/rsl.o
@@ -28,3 +30,7 @@ test:
 testclean:
 	for d in test/* ; do (cd $d; pwd; make clean) ; done
 
+
+.PHONY: use
+use:
+	@echo && $(MAKE) -C use
