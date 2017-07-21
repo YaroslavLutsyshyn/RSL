@@ -1,6 +1,9 @@
 
 
-all_source_and_header_files:=src/rsl.cpp include/rsl.h include/rsl_mpi_send.h
+all_source_and_header_files:=src/rsl.cpp 
+all_source_and_header_files+=include/rsl.h 
+all_source_and_header_files+=include/rsl_mpi_send.h
+all_source_and_header_files+=include/rsl_serializer.h
 all_library_files:=lib/librsl.a
 
 all: use

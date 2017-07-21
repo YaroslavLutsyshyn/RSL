@@ -12,11 +12,14 @@
 #include <algorithm>    
 #include <sstream>
 #include <iomanip>    // std::setw and other formatting
-
+#include <functional> // for simple hashing
+#include <typeinfo>
+ 
 
 namespace rsl {
 
 const int max_walltime_hrs_for_timestamp = 2; // 24*3
+const int on_stack_send_buffer_size = 10000;
 
 //===========================================================================80
 
@@ -61,13 +64,14 @@ public:
 
 };
 
+//===========================================================================80
 
 template <typename T> 
 MPI_Datatype mpi_type(void);
 
-class mpi_communicator {
+//===========================================================================80
 
-	using clock=std::chrono::high_resolution_clock;
+class mpi_communicator {
 
 private:
 
@@ -138,7 +142,6 @@ private:
 
 //===========================================================================80
 
-
 class timing {
 
 private:
@@ -157,13 +160,82 @@ public:
 	std::chrono::duration<long long, std::nano> clockdelay();
 
 };
- 
+
 //===========================================================================80
+
+namespace serializer {
+
+template<typename...A>
+class podstack { 
+
+public:
+
+	using buffer_type = char;
+
+private:
+
+	// buffer_type is defined 
+	// for external use of podstack<> only
+	// char is hard-wired in podstack because
+	// sizeof() is guaranteed to be in units 
+	// of sizeof(char).
+
+	char * buf;
+	char   buf_stack [rsl::on_stack_send_buffer_size];
+	char * buf_heap; 
+
+public:
+
+	constexpr void * getbuf() const;
+	constexpr int getcount() const;
+
+	const size_t size;
+	const int small_type_hash;
+
+	podstack(const A&...);
+	void copyin(const A&...);
+	void copyout(A&...);
+	constexpr int hash(const int /*tag*/);
+	~podstack() { if(buf_heap) delete buf_heap; }
+};
+
+} // close namespace serializer
+
+//===========================================================================80
+
+
+template<typename...A>
+class mpi_pod_send {
+
+private:
+
+	const int is_sender;
+	const int is_receiver;
+
+	std::unique_ptr<serializer::podstack<A...>> argstack;
+
+	MPI_Request request;
+
+	int request_cleared;
+
+public:
+
+	mpi_pod_send(mpi_communicator,const int,const int,const int,const A&...);
+    mpi_pod_send(const mpi_pod_send&)=delete; // copy constructor is removed
+	~mpi_pod_send();
+	void clear(void);
+	void clear_sender(void);
+	void clear_receiver(void);
+	void use(A&...);
+};
+
+//===========================================================================80
+
 
 template<typename T, int N>
 class mpi_send {
 
-public:
+private:
 
 	const int num_elem;
 
@@ -187,12 +259,10 @@ public:
 	void use(T*);
 };
  
-
-
 //===========================================================================80
-
 
 } // end of namespace
 
+#include "rsl_mpi_pod_send.h"
 #include "rsl_mpi_send.h"
-
+#include "rsl_serializer.h"
