@@ -1,3 +1,6 @@
 *.o
 exec
 obj/
+err
+log
+log*
