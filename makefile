@@ -31,6 +31,7 @@ test: $(all_library_files)
 	@echo && $(MAKE) -C test/06-tag-with-timestamp
 	@echo && $(MAKE) -C test/07-communicator-rank-and-size
 	@echo && $(MAKE) -C test/08-send
+	@echo && $(MAKE) -C test/09-pod-send
 
  
 .PHONY: testclean
